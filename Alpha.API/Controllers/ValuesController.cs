@@ -34,9 +34,10 @@ namespace Alpha.API.Controllers
         private string apiBaseUri = "https://login.microsoftonline.com/ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df/oauth2/token";
         private string graphUri = "https://graph.windows.net/ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df/users?api-version=1.6";
 
+
         // GET api/values
         [HttpGet]
-        public ActionResult<string[]> Get()
+        public ActionResult<string[]> GetUsers()
         {
             var response = GetAllAdUsers().Result;
             return response;
@@ -45,45 +46,31 @@ namespace Alpha.API.Controllers
 
         private async Task<string[]> GetAllAdUsers()
         {
-            var token = await AppAuthenticationAsync();
+            var token = await HttpAppAuthenticationAsync();
+
 
             using (var client = new HttpClient())
             {
                 //setup client
-                client.BaseAddress = new Uri(graphUri);
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("Authorization", token);
+                client.BaseAddress = new Uri(apiBaseUri);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Authorization", token);
 
                 //make request
-                HttpResponseMessage response = await client.GetAsync(client.BaseAddress);
+                var response = await client.GetAsync(graphUri);
                 var responseString = await response.Content.ReadAsStringAsync();
-            //    return responseString;
-              //  var content = await users.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<string[]>(responseString);
             }
 
         }
 
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public ActionResult<string> Get(int id)
+        private static async Task<string[]> GetUserGroupsAsync(HttpClient client)
         {
-            return "value";
-        }
+            var payload = await client.GetStringAsync($"https://graph.microsoft.com/v1.0/users");
+            var obj = JsonConvert.DeserializeObject<JObject>(payload);
+            var groupDescription = from g in obj["value"]
+                select g["displayName"].Value<string>();
 
-        // POST api/values
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-            // For more information on protecting this API from Cross Site Request Forgery (CSRF) attacks, see https://go.microsoft.com/fwlink/?LinkID=717803
-        }
-
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-            // For more information on protecting this API from Cross Site Request Forgery (CSRF) attacks, see https://go.microsoft.com/fwlink/?LinkID=717803
+            return groupDescription.ToArray();
         }
 
         // DELETE api/values/5
@@ -102,42 +89,18 @@ namespace Alpha.API.Controllers
             var clientID = "76aba709-8632-4832-84af-15972bdcbeea";
             var resource = "https://graph.microsoft.com/";
             var secret = "U5GKIjqusf2ekKLmVGaeRpQssSNMz8f5lG64gi4PhbU=";
+            var grantType = "grant_type=client_credentials";
 
             //  Ceremony
             var authority = $"https://login.microsoftonline.com/{tenant}";
             var authContext = new AuthenticationContext(authority);
             var credentials = new ClientCredential(clientID, secret);
+
             var authResult = await authContext.AcquireTokenAsync(resource, credentials);
 
             return authResult.AccessToken;
         }
 
-        private static async Task<string> HttpAppAuthenticationAsync()
-        {
-            //  Constants
-            var tenant = "ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df";
-            var clientID = "76aba709-8632-4832-84af-15972bdcbeea";
-            var resource = "https://graph.microsoft.com/";
-            var secret = "2NWSiSynjhpZhUFrB1OaNrBx80VpigTi6njgSRZ0QoQ=";
-
-            using (var webClient = new WebClient())
-            {
-                var requestParameters = new NameValueCollection();
-
-                requestParameters.Add("resource", resource);
-                requestParameters.Add("client_id", clientID);
-                requestParameters.Add("grant_type", "client_credentials");
-                requestParameters.Add("client_secret", secret);
-
-                var url = $"https://login.microsoftonline.com/{tenant}/oauth2/token";
-                var responsebytes = await webClient.UploadValuesTaskAsync(url, "POST", requestParameters);
-                var responsebody = Encoding.UTF8.GetString(responsebytes);
-                var obj = JsonConvert.DeserializeObject<JObject>(responsebody);
-                var token = obj["access_token"].Value<string>();
-
-                return token;
-            }
-        }
 
         private async Task<string> GetAccessToken()
         {
@@ -262,6 +225,34 @@ namespace Alpha.API.Controllers
 
                     await CreateUserAsync(client, "newuser", "LdapVplDemo.onmicrosoft.com");
                 }
+            }
+        }
+
+        private static async Task<string> HttpAppAuthenticationAsync()
+        {
+            //  Constants
+            var tenant = "ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df";
+            var clientID = "76aba709-8632-4832-84af-15972bdcbeea";
+            var resource = "https://graph.windows.net/";
+            var secret = "U5GKIjqusf2ekKLmVGaeRpQssSNMz8f5lG64gi4PhbU=";
+            var clientCredentials = "client_credentials";
+
+            using (var webClient = new WebClient())
+            {
+                var requestParameters = new NameValueCollection();
+
+                requestParameters.Add("resource", resource);
+                requestParameters.Add("client_id", clientID);
+                requestParameters.Add("grant_type", clientCredentials);
+                requestParameters.Add("client_secret", secret);
+
+                var url = $"https://login.microsoftonline.com/{tenant}/oauth2/token";
+                var responsebytes = await webClient.UploadValuesTaskAsync(url, "POST", requestParameters);
+                var responsebody = Encoding.UTF8.GetString(responsebytes);
+                var obj = JsonConvert.DeserializeObject<JObject>(responsebody);
+                var token = obj["access_token"].Value<string>();
+
+                return token;
             }
         }
 
