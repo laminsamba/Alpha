@@ -22,46 +22,61 @@ namespace Alpha.API.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
-        private readonly string _resourceId;
-        private readonly string _tenantid;
-        private readonly string _authority;
-        private readonly string _appId;
-        private readonly string _grant_type;
-        private readonly string _appSecret;
-        private readonly HttpClient _client;
-        private bool tokenSet = false;
-
-        private string apiBaseUri = "https://login.microsoftonline.com/ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df/oauth2/token";
-        private string graphUri = "https://graph.windows.net/ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df/users?api-version=1.6";
+        //  Constants
+        private const string Tenant = "ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df";
+        private const string ClientId = "76aba709-8632-4832-84af-15972bdcbeea";
+        private const string Resource = "https://graph.windows.net/";
+        private const string Secret = "U5GKIjqusf2ekKLmVGaeRpQssSNMz8f5lG64gi4PhbU" + "=";
+        private const string ClientCredentials = "client_credentials";
+        private const string ApiBaseUri = "https://login.microsoftonline.com/ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df/oauth2/token";
+        private const string GraphUri = "https://graph.windows.net/ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df/users?api-version=1.6";
 
 
         // GET api/values
         [HttpGet]
-        public ActionResult<string[]> GetUsers()
+        [Route("ADUsers")]
+        [Produces("application/json")]
+        public ActionResult<string> GeAzureADtUsers()
         {
             var response = GetAllAdUsers().Result;
             return response;
         }
-
-
-        private async Task<string[]> GetAllAdUsers()
+        private static async Task<string> GetToken()
         {
-            var token = await HttpAppAuthenticationAsync();
+            using (var webClient = new WebClient())
+            {
+                var requestParameters = new NameValueCollection();
+                requestParameters.Add("resource", Resource);
+                requestParameters.Add("client_id", ClientId);
+                requestParameters.Add("grant_type", ClientCredentials);
+                requestParameters.Add("client_secret", Secret);
 
+                var url = $"https://login.microsoftonline.com/{Tenant}/oauth2/token";
+                var responsebytes = await webClient.UploadValuesTaskAsync(url, "POST", requestParameters);
+                var responsebody = Encoding.UTF8.GetString(responsebytes);
+                var obj = JsonConvert.DeserializeObject<JObject>(responsebody);
+                var token = obj["access_token"].Value<string>();
 
+                return token;
+            }
+        }
+        private async Task<string> GetAllAdUsers()
+        {
+            var token = await GetToken();
             using (var client = new HttpClient())
             {
-                //setup client
-                client.BaseAddress = new Uri(apiBaseUri);
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Authorization", token);
+                client.BaseAddress = new Uri(GraphUri);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-                //make request
-                var response = await client.GetAsync(graphUri);
+                var response = await client.GetAsync(GraphUri);
                 var responseString = await response.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<string[]>(responseString);
+                return responseString;
             }
 
         }
+
+
+
 
         private static async Task<string[]> GetUserGroupsAsync(HttpClient client)
         {
@@ -72,16 +87,6 @@ namespace Alpha.API.Controllers
 
             return groupDescription.ToArray();
         }
-
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-            // For more information on protecting this API from Cross Site Request Forgery (CSRF) attacks, see https://go.microsoft.com/fwlink/?LinkID=717803
-        }
-
-        //********************************
-
         private static async Task<string> AppAuthenticationAsync()
         {
             //  Constants
@@ -100,8 +105,6 @@ namespace Alpha.API.Controllers
 
             return authResult.AccessToken;
         }
-
-
         private async Task<string> GetAccessToken()
         {
             var tenant = "ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df";
@@ -112,7 +115,7 @@ namespace Alpha.API.Controllers
 
             using (var client = new HttpClient())
             {
-                client.BaseAddress = new Uri(apiBaseUri);
+                client.BaseAddress = new Uri(ApiBaseUri);
 
                 // We want the response to be JSON.
                 client.DefaultRequestHeaders.Accept.Clear();
@@ -135,8 +138,6 @@ namespace Alpha.API.Controllers
                 return ((dynamic)responseData).access_token;
             }
         }
-
-
         private static async Task<bool> DoesUserExistsAsync(HttpClient client, string user)
         {
             try
@@ -150,7 +151,6 @@ namespace Alpha.API.Controllers
                 return false;
             }
         }
-
         private static async Task<string[]> GetUserGroupsAsync(HttpClient client, string user)
         {
             var payload = await client.GetStringAsync(
@@ -161,7 +161,6 @@ namespace Alpha.API.Controllers
 
             return groupDescription.ToArray();
         }
-
         private static async Task CreateUserAsync(HttpClient client, string user, string domain)
         {
             using (var stream = new MemoryStream())
@@ -199,11 +198,10 @@ namespace Alpha.API.Controllers
                 }
             }
         }
-
         private static async Task Test()
         {
             //var token = await AppAuthenticationAsync();
-            var token = await HttpAppAuthenticationAsync();
+            var token = await GetToken();
 
             using (var client = new HttpClient())
             {
@@ -225,34 +223,6 @@ namespace Alpha.API.Controllers
 
                     await CreateUserAsync(client, "newuser", "LdapVplDemo.onmicrosoft.com");
                 }
-            }
-        }
-
-        private static async Task<string> HttpAppAuthenticationAsync()
-        {
-            //  Constants
-            var tenant = "ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df";
-            var clientID = "76aba709-8632-4832-84af-15972bdcbeea";
-            var resource = "https://graph.windows.net/";
-            var secret = "U5GKIjqusf2ekKLmVGaeRpQssSNMz8f5lG64gi4PhbU=";
-            var clientCredentials = "client_credentials";
-
-            using (var webClient = new WebClient())
-            {
-                var requestParameters = new NameValueCollection();
-
-                requestParameters.Add("resource", resource);
-                requestParameters.Add("client_id", clientID);
-                requestParameters.Add("grant_type", clientCredentials);
-                requestParameters.Add("client_secret", secret);
-
-                var url = $"https://login.microsoftonline.com/{tenant}/oauth2/token";
-                var responsebytes = await webClient.UploadValuesTaskAsync(url, "POST", requestParameters);
-                var responsebody = Encoding.UTF8.GetString(responsebytes);
-                var obj = JsonConvert.DeserializeObject<JObject>(responsebody);
-                var token = obj["access_token"].Value<string>();
-
-                return token;
             }
         }
 
