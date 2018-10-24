@@ -73,35 +73,5 @@ namespace Alpha.API.Controllers
             }
 
         }
-
-        //[HttpGet]
-        //[Route("user/Index")]
-        //[Produces("application/json")]
-
-        //public async Task<ActionResult<string>> Index()
-        //{
-
-        //    string clientId = ClientId;
-        //    string clientSecret = Secret;
-
-        //    var email = User.Identity.Name;
-
-        //    AuthenticationContext authContext = new AuthenticationContext("https://login.windows.net/{Tenant}/oauth2/token");
-        //    ClientCredential creds = new ClientCredential(clientId, clientSecret);
-        //    AuthenticationResult authResult = await authContext.AcquireTokenAsync("https://graph.microsoft.com/", creds);
-
-        //    HttpClient http = new HttpClient();
-        //    string url = $"https://graph.microsoft.com/v1.0/users/{email}/$select=companyName";
-        //    //url = "https://graph.windows.net/xxx.onmicrosoft.com/users?api-version=1.6";
-
-        //    // Append the access token for the Graph API to the Authorization header of the request by using the Bearer scheme.
-        //    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);
-        //    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authResult.AccessToken);
-        //    HttpResponseMessage response = await http.SendAsync(request);
-        //    var json = response.Content.ReadAsStringAsync();
-
-        //    return json.Result;
-        //}
-
     }
 }
