@@ -24,9 +24,9 @@ namespace Alpha.API.Controllers
     {
         //  Constants
         private const string Tenant = "ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df";
-        private const string ClientId = "76aba709-8632-4832-84af-15972bdcbeea";
+        private const string ClientId = "b07ad4ff-803d-45c3-b76f-49f6fe8b5d94";
         private const string Resource = "https://graph.windows.net/";
-        private const string Secret = "U5GKIjqusf2ekKLmVGaeRpQssSNMz8f5lG64gi4PhbU=";
+        private const string Secret = "6KHTyTSOtSCAntXJ4jo8Kkka0LdRsD64+6UJQWeZJlg=";
         private const string ClientCredentials = "client_credentials";
 
 
