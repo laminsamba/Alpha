@@ -30,6 +30,7 @@ namespace Alpha.API
                 {
                     options.Audience = Configuration["AzureAd:ClientId"];
                     options.Authority = $"{Configuration["AzureAd:Instance"]}{Configuration["AzureAd:TenantId"]}";
+                    // check for current user to see if he or she is authorise
                     options.SaveToken = true;
                 });
 
