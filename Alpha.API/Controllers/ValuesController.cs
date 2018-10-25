@@ -24,9 +24,9 @@ namespace Alpha.API.Controllers
     {
         //  Constants
         private const string Tenant = "ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df";
-        private const string ClientId = "b07ad4ff-803d-45c3-b76f-49f6fe8b5d94";
-        private const string Resource = "https://graph.windows.net/";
-        private const string ClientSecret = "TwnS4+6iNLpmoO3HvQ9KW+MrSJCq4KmNa937GOTM0Bs=";
+        private const string ClientId = "76aba709-8632-4832-84af-15972bdcbeea";
+        private const string Resource = "https://graph.microsoft.com/";
+        private const string ClientSecret = "rGxUT0qRvbXUtEkFm/HZBQCQq5zg2fq15sqZLLs04GY=";
         private const string ClientCredentials = "client_credentials";
         private const string ContentType = "application/json";
         private const string Accept = "application/json";
@@ -73,8 +73,8 @@ namespace Alpha.API.Controllers
             {
                 var link = $"https://graph.microsoft.com/v1.0/users?$select=displayName,givenName,mail&$format=json";
                 client.BaseAddress = new Uri(link);
-                client.DefaultRequestHeaders.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(Accept));
+         //       client.DefaultRequestHeaders.Clear();
+             //   client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(Accept));
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 var response = await client.GetAsync(link);
                 var responseString = await response.Content.ReadAsStringAsync();
