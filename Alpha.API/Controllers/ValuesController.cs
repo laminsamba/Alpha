@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebSockets.Internal;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
@@ -24,29 +25,14 @@ namespace Alpha.API.Controllers
     {
         //  Constants
         private const string Tenant = "ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df";
-        private const string ClientId = "76aba709-8632-4832-84af-15972bdcbeea";
+        private const string ClientId = "b07ad4ff-803d-45c3-b76f-49f6fe8b5d94";
         private const string Resource = "https://graph.microsoft.com/";
-        private const string ClientSecret = "rGxUT0qRvbXUtEkFm/HZBQCQq5zg2fq15sqZLLs04GY=";
+        private const string ClientSecret = "HUkF4xqEcL2C/HkFlFQ1e2BLmG/PFB8kaMM0TsrttpU=";
         private const string ClientCredentials = "client_credentials";
         private const string ContentType = "application/json";
         private const string Accept = "application/json";
 
-        [HttpGet]
-        [Route("AzureAdUsers")]
-        public string GetAzureAdUsers()
-        {
-            var response = GetAllAdUsers().Result;
-            return response;
-        }
-
-        [HttpGet]
-        [Route("AzureAdUserByName")]
-        //public string GetAzureAdUserByName(string name)
-        //{
-        //    var response = GetAllAdUsersByName(name).Result;
-        //    return response;
-        //}
-        private async Task<string> GetToken()
+        private static async Task<string> GetToken()
         {
             using (var webClient = new WebClient())
             {
@@ -55,7 +41,8 @@ namespace Alpha.API.Controllers
                 requestParameters.Add("client_id", ClientId);
                 requestParameters.Add("grant_type", ClientCredentials);
                 requestParameters.Add("client_secret", ClientSecret);
-                requestParameters.Add("Content-Type", ContentType);
+                requestParameters.Add("Content-Type","application/json");
+                requestParameters.Add("Accept", Accept);
 
                 var url = $"https://login.microsoftonline.com/{Tenant}/oauth2/token";
                 var responsebytes = await webClient.UploadValuesTaskAsync(url, "POST", requestParameters);
@@ -66,38 +53,47 @@ namespace Alpha.API.Controllers
                 return token;
             }
         }
-        private async Task<string> GetAllAdUsers()
+
+        // Invalid 'HttpContent' instance provided. It does not have a content type header with a value of 'application/http; msgtype=response'.
+        //    Parameter name: content
+
+        [HttpGet]
+        [Route("user/AzureAdUsers")]
+        public async Task<object> GetAllAdUsers()
         {
             var token = await GetToken();
             using (var client = new HttpClient())
             {
-                var link = $"https://graph.microsoft.com/v1.0/users?$select=displayName,givenName,mail&$format=json";
-                client.BaseAddress = new Uri(link);
-         //       client.DefaultRequestHeaders.Clear();
-             //   client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(Accept));
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                var response = await client.GetAsync(link);
-                var responseString = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    var link = $"https://graph.microsoft.com/v1.0/users";
+                    client.BaseAddress = new Uri(link);
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-                return responseString;
+                    var response = client.GetAsync(link);
+                    
+                    //response.Result.Content.Headers.ContentType = new MediaTypeHeaderValue("application/http");
+                    //response.Result.Content.Headers.ContentType.Parameters.Add(new NameValueHeaderValue("msgtype", "response"));
+
+                    var resultContent = await response.Result.Content.ReadAsStringAsync();
+
+                    var model = JsonConvert.SerializeObject(resultContent);
+                    var donet = JsonConvert.DeserializeObject(resultContent);
+
+                    return donet;
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+
+                }
             }
 
         }
-        //private async Task<string> GetAllAdUsersByName(string name)
-        //{
-        //    var token = await GetToken();
-        //    using (var client = new HttpClient())
-        //    {
-        //        var link = $"https://graph.microsoft.com/v1.0/users?$filter=startswith(displayName,{name})&$format=json";
-        //        client.BaseAddress = new Uri(link);
-        //        client.DefaultRequestHeaders.Clear();
-        //        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        //        var response = await client.GetAsync(link);
-        //        var responseString = await response.Content.ReadAsStringAsync();
+    }
 
-        //        return responseString;
-        //    }
-
-        //}
+    public class SentimentJsonModel
+    {
+        public string Email { get; set; }   
     }
 }
