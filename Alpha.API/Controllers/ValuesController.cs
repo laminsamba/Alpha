@@ -41,7 +41,7 @@ namespace Alpha.API.Controllers
                 requestParameters.Add("client_id", ClientId);
                 requestParameters.Add("grant_type", ClientCredentials);
                 requestParameters.Add("client_secret", ClientSecret);
-                requestParameters.Add("Content-Type","application/json");
+                requestParameters.Add("Content-Type", "application/json");
                 requestParameters.Add("Accept", Accept);
 
                 var url = $"https://login.microsoftonline.com/{Tenant}/oauth2/token";
@@ -54,9 +54,6 @@ namespace Alpha.API.Controllers
             }
         }
 
-        // Invalid 'HttpContent' instance provided. It does not have a content type header with a value of 'application/http; msgtype=response'.
-        //    Parameter name: content
-
         [HttpGet]
         [Route("user/AzureAdUsers")]
         public async Task<object> GetAllAdUsers()
@@ -64,29 +61,16 @@ namespace Alpha.API.Controllers
             var token = await GetToken();
             using (var client = new HttpClient())
             {
-                try
-                {
-                    var link = $"https://graph.microsoft.com/v1.0/users";
-                    client.BaseAddress = new Uri(link);
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var link = $"https://graph.microsoft.com/v1.0/users";
+                client.BaseAddress = new Uri(link);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-                    var response = client.GetAsync(link);
-                    
-                    //response.Result.Content.Headers.ContentType = new MediaTypeHeaderValue("application/http");
-                    //response.Result.Content.Headers.ContentType.Parameters.Add(new NameValueHeaderValue("msgtype", "response"));
+                var response = client.GetAsync(link);
+                var resultContent = await response.Result.Content.ReadAsStringAsync();
 
-                    var resultContent = await response.Result.Content.ReadAsStringAsync();
+                var result = JsonConvert.DeserializeObject(resultContent);
 
-                    var model = JsonConvert.SerializeObject(resultContent);
-                    var donet = JsonConvert.DeserializeObject(resultContent);
-
-                    return donet;
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-
-                }
+                return result;
             }
 
         }
@@ -94,6 +78,6 @@ namespace Alpha.API.Controllers
 
     public class SentimentJsonModel
     {
-        public string Email { get; set; }   
+        public string Email { get; set; }
     }
 }
