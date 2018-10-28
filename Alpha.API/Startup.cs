@@ -60,6 +60,9 @@ namespace Alpha.API
                     .Build();
                 config.Filters.Add(new AuthorizeFilter(policy));
             }).SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+
+            services.Configure<ConfigurationSetting>(Configuration.GetSection("AzureAd"));
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -90,4 +93,15 @@ namespace Alpha.API
 
         }
     }
-}
+
+    public class ConfigurationSetting
+    {
+        public string TenantId { get; set; }
+        public string ClientId  { get; set; }
+        public string Resource  { get; set; }
+        public string ClientSecret  { get; set; }
+        public string ClientCredentials { get; set; }
+        public string ContentType { get; set; }
+        public string Accept { get; set; }
+    }                  
+}                      

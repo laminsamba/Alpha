@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebSockets.Internal;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -23,28 +25,37 @@ namespace Alpha.API.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
-        //  Constants
-        private const string Tenant = "ee8e24c2-a7cc-49f7-a6e8-a45ed941a0df";
-        private const string ClientId = "b07ad4ff-803d-45c3-b76f-49f6fe8b5d94";
-        private const string Resource = "https://graph.microsoft.com/";
-        private const string ClientSecret = "HUkF4xqEcL2C/HkFlFQ1e2BLmG/PFB8kaMM0TsrttpU=";
-        private const string ClientCredentials = "client_credentials";
-        private const string ContentType = "application/json";
-        private const string Accept = "application/json";
+        private static IOptions<ConfigurationSetting> _appSettings;
+
+        public ValuesController(IOptions<ConfigurationSetting> appSettings)
+        {
+            _appSettings = appSettings;
+        }
 
         private static async Task<string> GetToken()
         {
             using (var webClient = new WebClient())
             {
-                var requestParameters = new NameValueCollection();
-                requestParameters.Add("resource", Resource);
-                requestParameters.Add("client_id", ClientId);
-                requestParameters.Add("grant_type", ClientCredentials);
-                requestParameters.Add("client_secret", ClientSecret);
-                requestParameters.Add("Content-Type", "application/json");
-                requestParameters.Add("Accept", Accept);
+                //var test = _configuration.GetValue<string>("AzureAd:ClientId");
+                var clientId = _appSettings.Value.ClientId;
+                var contentType = _appSettings.Value.ContentType;
+                var accept = _appSettings.Value.Accept;
+                var clientCredentials = _appSettings.Value.ClientCredentials;
+                var clientSecret = _appSettings.Value.ClientSecret;
+                var resource = _appSettings.Value.Resource;
+                var tenantId = _appSettings.Value.TenantId;
 
-                var url = $"https://login.microsoftonline.com/{Tenant}/oauth2/token";
+
+
+                var requestParameters = new NameValueCollection();
+                requestParameters.Add("resource", resource);
+                requestParameters.Add("client_id", clientId);
+                requestParameters.Add("grant_type", clientCredentials);
+                requestParameters.Add("client_secret", clientSecret);
+                requestParameters.Add("Content-Type", contentType);
+                requestParameters.Add("Accept", accept);
+
+                var url = $"https://login.microsoftonline.com/{tenantId}/oauth2/token";
                 var responsebytes = await webClient.UploadValuesTaskAsync(url, "POST", requestParameters);
                 var responsebody = Encoding.UTF8.GetString(responsebytes);
                 var obj = JsonConvert.DeserializeObject<JObject>(responsebody);
@@ -76,8 +87,4 @@ namespace Alpha.API.Controllers
         }
     }
 
-    public class SentimentJsonModel
-    {
-        public string Email { get; set; }
-    }
 }
