@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -85,6 +86,34 @@ namespace Alpha.API.Controllers
             }
 
         }
+
+        [HttpGet]
+        [Route("user/AzureCurrentUser")]
+        public async Task<object> GetCurrentUser()
+        {
+            var token = await GetToken();
+            using (var client = new HttpClient())
+            {
+                ClaimsIdentity identity = this.User.Identity as ClaimsIdentity;
+                string objectId = identity.Claims.FirstOrDefault(x => x.Type ==  "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+
+                var link = $"https://graph.microsoft.com/v1.0/users?$filter=id eq '{objectId}'&$select= "+"{'mail'}";
+
+                client.BaseAddress = new Uri(link);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var response = client.GetAsync(link);
+                var resultContent = await response.Result.Content.ReadAsStringAsync();
+
+                var result = JsonConvert.DeserializeObject(resultContent);
+
+                return result;
+            }
+
+        }
+
+
     }
+
 
 }
